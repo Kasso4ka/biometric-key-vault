@@ -2,6 +2,7 @@
 
 import FaceDetectionTest from "@/components/FaceDetectionTest";
 import Generate from "@/components/fuzzy/Generate";
+import SaveEmbedding from "@/components/SaveEmbedding";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 
@@ -38,7 +39,7 @@ export default function Home() {
         </TabsContent>
 
         <TabsContent value="recover-address">
-          Recover private key from wallet address
+          <SaveEmbedding />
         </TabsContent>
       </Tabs>
     </div>
