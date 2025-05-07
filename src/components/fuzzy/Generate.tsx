@@ -71,7 +71,6 @@ const Generate: React.FC = ({}) => {
     try {
       const context = canvasRef.current.getContext("2d");
       if (context) {
-        // Draw video frame to canvas
         canvasRef.current.width = videoRef.current.videoWidth;
         canvasRef.current.height = videoRef.current.videoHeight;
         context.drawImage(

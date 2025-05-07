@@ -1,5 +1,6 @@
 "use client";
 
+import FaceDetectionTest from "@/components/FaceDetectionTest";
 import Generate from "@/components/fuzzy/Generate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
@@ -33,7 +34,7 @@ export default function Home() {
         </TabsContent>
 
         <TabsContent value="recover-file">
-          Recover private key from helper data file
+          <FaceDetectionTest />
         </TabsContent>
 
         <TabsContent value="recover-address">
