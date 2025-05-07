@@ -1,5 +1,6 @@
 "use client";
 
+import Generate from "@/components/fuzzy/Generate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 
@@ -27,7 +28,9 @@ export default function Home() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="generate">Generate private key</TabsContent>
+        <TabsContent value="generate">
+          <Generate />
+        </TabsContent>
 
         <TabsContent value="recover-file">
           Recover private key from helper data file
