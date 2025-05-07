@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# rust
+/fuzzy-extractor/target
+/fuzzy-extractor/Cargo.lock
+/fuzzy-extractor/*.txt
+/fuzzy-extractor/*.json
