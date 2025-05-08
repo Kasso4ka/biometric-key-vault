@@ -12,6 +12,8 @@ interface WebcamCaptureProps {
   description?: string;
   loading?: boolean;
   loadingText?: string;
+  disabled?: boolean;
+  disabledText?: string;
 }
 
 const WebcamCapture: React.FC<WebcamCaptureProps> = ({
@@ -22,6 +24,8 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
   description = "Используйте вашу веб-камеру",
   loading = false,
   loadingText = "Обработка данных...",
+  disabled = false,
+  disabledText = "Загрузите helper data",
 }) => {
   const [isCapturing, setIsCapturing] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -147,7 +151,11 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
       </CardContent>
       <CardFooter className="flex flex-col gap-4 p-6">
         {!isCapturing ? (
-          <Button onClick={startWebcam} className="w-full" disabled={loading}>
+          <Button
+            onClick={startWebcam}
+            className="w-full"
+            disabled={loading || disabled}
+          >
             <Camera className="mr-2 h-4 w-4" />
             {buttonText}
           </Button>
@@ -155,12 +163,16 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
           <Button
             onClick={captureImage}
             className="w-full"
-            disabled={loading}
-            variant="destructive"
+            disabled={loading || disabled}
           >
             <ShieldCheck className="mr-2 h-4 w-4" />
             {captureButtonText}
           </Button>
+        )}
+        {disabled && (
+          <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
+            Загрузите вспомогательные данные перед сканированием
+          </p>
         )}
       </CardFooter>
     </Card>
