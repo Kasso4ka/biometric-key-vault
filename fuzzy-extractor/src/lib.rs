@@ -1,3 +1,7 @@
+#[cfg(target_arch = "wasm32")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
 mod fuzzy;
 
 use fuzzy::FuzzyExtractor;
@@ -21,7 +25,6 @@ struct HelperData {
 impl FaceCryptoWallet {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
-        // Set up panic hook for better debugging in WASM
         #[cfg(feature = "console_error_panic_hook")]
         console_error_panic_hook::set_once();
         
@@ -51,17 +54,40 @@ impl FaceCryptoWallet {
     
     #[wasm_bindgen]
     pub fn generate_wallet(&self, face_embedding: &[f32]) -> JsValue {
+        web_sys::console::log_1(&format!("Start generate_wallet with embedding length: {}", face_embedding.len()).into());
+
+        web_sys::console::log_1(&format!("Converting embedding to bytes...").into());
         let face_bytes = self.convert_face_to_bytes(face_embedding);
-        let (private_key, helpers) = self.extractor.generate(&face_bytes);
-        let wallet_address = Self::generate_eth_address(&private_key);
-        let helper_data = self.serialize_helpers(&helpers);
+        web_sys::console::log_1(&format!("Converted to {} bytes", face_bytes.len()).into());
         
-        // Use JsValue::from_serde with the serde-serialize feature
-        serde_wasm_bindgen::to_value(&serde_json::json!({
-            "privateKey": hex::encode(&private_key),
-            "walletAddress": wallet_address,
-            "helperData": helper_data
-        })).unwrap()
+        web_sys::console::log_1(&format!("Generating keys with an extractor...").into());
+        match std::panic::catch_unwind(|| { 
+            self.extractor.generate(&face_bytes)
+        }) {
+            Ok((private_key, helpers)) => {
+                web_sys::console::log_1(&format!("Keys generated successfully!").into());
+                
+                let wallet_address = Self::generate_eth_address(&private_key);
+                web_sys::console::log_1(&format!("Generated wallet address: {}", wallet_address).into());
+                
+                let helper_data = self.serialize_helpers(&helpers);
+                web_sys::console::log_1(&format!("Helpers are serialized, size: {} bytes", helper_data.len()).into());
+                
+                serde_wasm_bindgen::to_value(&serde_json::json!({
+                    "success": true,
+                    "privateKey": hex::encode(&private_key),
+                    "walletAddress": wallet_address,
+                    "helperData": helper_data
+                })).unwrap()
+            },
+            Err(_) => {
+                web_sys::console::log_1(&format!("Error generating keys!").into());
+                serde_wasm_bindgen::to_value(&serde_json::json!({
+                    "success": false,
+                    "error": "Internal error generating keys"
+                })).unwrap()
+            }
+        }
     }
     
     #[wasm_bindgen]

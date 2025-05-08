@@ -63,14 +63,14 @@ class FuzzyExtractorService {
       );
 
       try {
-        const walletJson =
+        const wallet =
           this.faceCryptoWallet.generate_wallet(processedEmbedding);
-        const wallet = JSON.parse(walletJson);
+        console.log(wallet.get("walletAddress"));
 
         return {
-          privateKey: wallet.privateKey,
-          walletAddress: wallet.walletAddress,
-          helperData: wallet.helperData,
+          privateKey: wallet.get("privateKey"),
+          walletAddress: wallet.get("walletAddress"),
+          helperData: wallet.get("helperData"),
         };
       } catch (e) {
         console.error("WASM error during wallet generation:", e);
@@ -100,11 +100,15 @@ class FuzzyExtractorService {
       const processedEmbedding = this.ensureCorrectEmbeddingSize(faceEmbedding);
 
       try {
-        const walletJson = this.faceCryptoWallet.restore_wallet(
+        const wallet = this.faceCryptoWallet.restore_wallet(
           processedEmbedding,
           helperData
         );
-        return JSON.parse(walletJson);
+        return {
+          success: wallet.get("success"),
+          privateKey: wallet.get("privateKey"),
+          walletAddress: wallet.get("walletAddress"),
+        };
       } catch (e) {
         console.error("WASM error during wallet restoration:", e);
         return {
