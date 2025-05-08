@@ -7,6 +7,7 @@ import WebcamCapture from "../WebCamera";
 import faceDetectionService from "@/services/FaceDetectionService";
 import fuzzyExtractorService from "../../services/FuzzyExtractorService";
 import { Alert, AlertDescription } from "../ui/alert";
+import { saveWalletData } from "@/utils/API";
 
 interface WalletData {
   privateKey: string;
@@ -117,8 +118,30 @@ const Generate: React.FC = ({}) => {
     document.body.removeChild(element);
   };
 
-  const saveHelperDataInDb = () => {
-    console.log("Helper data saved!");
+  const saveHelperDataInDb = async () => {
+    if (!walletData) return;
+
+    setIsGenerating(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const success = await saveWalletData(
+        walletData.walletAddress,
+        walletData.helperData
+      );
+
+      if (success) {
+        setSuccessMessage("Данные успешно сохранены в базе данных");
+      } else {
+        throw new Error("Failed to save data to database");
+      }
+    } catch (err) {
+      console.error("Error saving data to DB:", err);
+      setError("Произошла ошибка при сохранении данных в базе данных");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
