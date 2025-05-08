@@ -54,7 +54,7 @@ class FuzzyExtractorService {
       if (!this.faceCryptoWallet) {
         throw new Error("FaceCryptoWallet is not initialized");
       }
-      console.log(faceEmbedding);
+
       const processedEmbedding = this.ensureCorrectEmbeddingSize(faceEmbedding);
 
       console.log(

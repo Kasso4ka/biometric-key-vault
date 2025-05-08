@@ -57,25 +57,6 @@ class FaceDetectionService {
       throw new Error("Error getting face embedding");
     }
   }
-
-  convertEmbeddingToBytes(faceEmbedding: Float32Array): Uint8Array {
-    const byteArray = new Uint8Array(16);
-
-    for (let i = 0; i < 16; i++) {
-      const start = i * 8;
-      let byteVal = 0;
-
-      for (let j = 0; j < 8; j++) {
-        if (start + j < faceEmbedding.length && faceEmbedding[start + j] > 0) {
-          byteVal |= 1 << j;
-        }
-      }
-
-      byteArray[i] = byteVal;
-    }
-
-    return byteArray;
-  }
 }
 
 const faceDetectionService = new FaceDetectionService();

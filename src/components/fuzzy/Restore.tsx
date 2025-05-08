@@ -14,7 +14,7 @@ interface WalletData {
   helperData: string;
 }
 
-const Generate: React.FC = ({}) => {
+const Restore: React.FC = ({}) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [walletData, setWalletData] = useState<WalletData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -244,4 +244,4 @@ const Generate: React.FC = ({}) => {
   );
 };
 
-export default Generate;
+export default Restore;
