@@ -65,9 +65,12 @@ impl FaceCryptoWallet {
             self.extractor.generate(&face_bytes)
         }) {
             Ok((private_key, helpers)) => {
-                web_sys::console::log_1(&format!("Keys generated successfully!").into());
+                web_sys::console::log_1(&format!("Keys generated successfully! Generate Private key...").into());
+
+                let full_private_key = Self::generate_ethereum_private_key(&private_key);
+                web_sys::console::log_1(&format!("Generated ethereum private key: 0x{}", hex::encode(&full_private_key)).into());
                 
-                let wallet_address = Self::generate_eth_address(&private_key);
+                let wallet_address = Self::generate_eth_address(&full_private_key);
                 web_sys::console::log_1(&format!("Generated wallet address: {}", wallet_address).into());
                 
                 let helper_data = self.serialize_helpers(&helpers);
@@ -75,7 +78,7 @@ impl FaceCryptoWallet {
                 
                 serde_wasm_bindgen::to_value(&serde_json::json!({
                     "success": true,
-                    "privateKey": hex::encode(&private_key),
+                    "privateKey": hex::encode(&full_private_key),
                     "walletAddress": wallet_address,
                     "helperData": helper_data
                 })).unwrap()
@@ -97,11 +100,12 @@ impl FaceCryptoWallet {
         match self.deserialize_helpers(helper_data) {
             Ok(helpers) => {
                 let restored_key = self.extractor.reproduce(&face_bytes, &helpers);
-                let restored_address = Self::generate_eth_address(&restored_key);
+                let full_private_key = Self::generate_ethereum_private_key(&restored_key);
+                let restored_address = Self::generate_eth_address(&full_private_key);
                 
                 serde_wasm_bindgen::to_value(&serde_json::json!({
                     "success": true,
-                    "privateKey": hex::encode(&restored_key),
+                    "privateKey": hex::encode(&full_private_key),
                     "walletAddress": restored_address
                 })).unwrap()
             },
@@ -113,15 +117,33 @@ impl FaceCryptoWallet {
             }
         }
     }
-    
-    fn generate_eth_address(private_key: &[u8]) -> String {
+
+    fn generate_ethereum_private_key(seed: &[u8]) -> [u8; 32] {
         let mut keccak = Keccak::v256();
         let mut hash = [0u8; 32];
-        keccak.update(private_key);
+        keccak.update(seed);
+        keccak.finalize(&mut hash);
+        hash
+    }
+    
+    fn generate_eth_address(private_key: &[u8]) -> String {
+        use libsecp256k1::{SecretKey, PublicKey};
+        
+        let secret_key = SecretKey::parse_slice(private_key).unwrap();
+        
+        let public_key = PublicKey::from_secret_key(&secret_key);
+        
+        let serialized_pubkey = public_key.serialize();
+        
+        let pubkey_without_prefix = &serialized_pubkey[1..];
+        
+        let mut keccak = Keccak::v256();
+        let mut hash = [0u8; 32];
+        keccak.update(pubkey_without_prefix);
         keccak.finalize(&mut hash);
         
         let address = &hash[12..32];
-        
+
         format!("0x{}", hex::encode(address))
     }
     
