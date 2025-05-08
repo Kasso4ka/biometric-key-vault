@@ -21,6 +21,10 @@ struct HelperData {
 impl FaceCryptoWallet {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
+        // Set up panic hook for better debugging in WASM
+        #[cfg(feature = "console_error_panic_hook")]
+        console_error_panic_hook::set_once();
+        
         let extractor = FuzzyExtractor::new(16, 8.0, 0.001);
         Self { extractor }
     }
@@ -52,13 +56,12 @@ impl FaceCryptoWallet {
         let wallet_address = Self::generate_eth_address(&private_key);
         let helper_data = self.serialize_helpers(&helpers);
         
-        let result = JsValue::from_serde(&serde_json::json!({
+        // Use JsValue::from_serde with the serde-serialize feature
+        serde_wasm_bindgen::to_value(&serde_json::json!({
             "privateKey": hex::encode(&private_key),
             "walletAddress": wallet_address,
             "helperData": helper_data
-        })).unwrap();
-        
-        result
+        })).unwrap()
     }
     
     #[wasm_bindgen]
@@ -70,21 +73,17 @@ impl FaceCryptoWallet {
                 let restored_key = self.extractor.reproduce(&face_bytes, &helpers);
                 let restored_address = Self::generate_eth_address(&restored_key);
                 
-                let result = JsValue::from_serde(&serde_json::json!({
+                serde_wasm_bindgen::to_value(&serde_json::json!({
                     "success": true,
                     "privateKey": hex::encode(&restored_key),
                     "walletAddress": restored_address
-                })).unwrap();
-                
-                result
+                })).unwrap()
             },
             Err(e) => {
-                let result = JsValue::from_serde(&serde_json::json!({
+                serde_wasm_bindgen::to_value(&serde_json::json!({
                     "success": false,
                     "error": e
-                })).unwrap();
-                
-                result
+                })).unwrap()
             }
         }
     }
