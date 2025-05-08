@@ -45,3 +45,6 @@ next-env.d.ts
 /fuzzy-extractor/Cargo.lock
 /fuzzy-extractor/*.txt
 /fuzzy-extractor/*.json
+
+# prisma
+/src/generated
