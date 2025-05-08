@@ -29,6 +29,9 @@ importers:
       face-api.js:
         specifier: ^0.22.2
         version: 0.22.2
+      fuzzy-extractor:
+        specifier: link:fuzzy-extractor/pkg
+        version: link:fuzzy-extractor/pkg
       lucide-react:
         specifier: ^0.507.0
         version: 0.507.0(react@19.1.0)
@@ -38,6 +41,9 @@ importers:
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      pkg:
+        specifier: link:pkg
+        version: link:pkg
       react:
         specifier: ^19.0.0
         version: 19.1.0
