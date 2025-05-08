@@ -1,6 +1,12 @@
+interface WalletDataResponse {
+  id: number;
+  address: string;
+  helperData: string;
+}
+
 export async function saveWalletData(
   address: string,
-  helperData: any
+  helperData: string
 ): Promise<boolean> {
   try {
     const response = await fetch("/api", {
@@ -23,7 +29,9 @@ export async function saveWalletData(
   }
 }
 
-export async function getWalletData(address: string): Promise<any | null> {
+export async function getWalletData(
+  address: string
+): Promise<WalletDataResponse | null> {
   try {
     const response = await fetch(`/api?address=${encodeURIComponent(address)}`);
 
@@ -35,7 +43,8 @@ export async function getWalletData(address: string): Promise<any | null> {
       return null;
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as WalletDataResponse;
+    console.log(data);
     return data;
   } catch (error) {
     console.error("Error while requesting API:", error);

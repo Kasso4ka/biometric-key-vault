@@ -85,7 +85,7 @@ const Generate: React.FC = ({}) => {
     }
   };
 
-  const copyToClipboard = (text: string, label: string) => {
+  const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
 
@@ -203,9 +203,7 @@ const Generate: React.FC = ({}) => {
                       size="sm"
                       variant="ghost"
                       className="absolute right-2 top-2"
-                      onClick={() =>
-                        copyToClipboard(walletData.privateKey, "Приватный ключ")
-                      }
+                      onClick={() => copyToClipboard(walletData.privateKey)}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -234,12 +232,7 @@ const Generate: React.FC = ({}) => {
                       size="sm"
                       variant="ghost"
                       className="absolute right-2 top-2"
-                      onClick={() =>
-                        copyToClipboard(
-                          walletData.walletAddress,
-                          "Адрес кошелька"
-                        )
-                      }
+                      onClick={() => copyToClipboard(walletData.walletAddress)}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>

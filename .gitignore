@@ -47,4 +47,4 @@ next-env.d.ts
 /fuzzy-extractor/*.json
 
 # prisma
-/src/generated
+/prisma/client

@@ -124,7 +124,7 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
             <div className="text-center p-8">
               <Camera className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <p className="text-gray-400">
-                Нажмите кнопку "{buttonText}" для доступа к камере
+                {`Нажмите кнопку "${buttonText}" для доступа к камере`}
               </p>
             </div>
           )}
@@ -171,7 +171,7 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
         )}
         {disabled && (
           <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
-            Загрузите вспомогательные данные перед сканированием
+            {disabledText}
           </p>
         )}
       </CardFooter>
