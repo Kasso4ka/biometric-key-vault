@@ -170,19 +170,20 @@ const RestoreFromDB: React.FC = () => {
 
   return (
     <div>
-      <Card className="mt-2 mb-4">
-        <CardContent>
-          <h2 className="text-xl font-semibold mb-2">
-            Восстановление кошелька из базы данных
-          </h2>
-          <p>
-            Для восстановления доступа введите адрес кошелька, чтобы найти
-            вспомогательные данные в базе, а затем отсканируйте ваше лицо.
-          </p>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-8 md:grid-cols-[1fr_400px]">
+      <div className="animate-fade-in-slide">
+        <Card className="mt-2 mb-4">
+          <CardContent>
+            <h2 className="text-xl font-semibold mb-2">
+              Восстановление кошелька из базы данных
+            </h2>
+            <p>
+              Для восстановления доступа введите адрес кошелька, чтобы найти
+              вспомогательные данные в базе, а затем отсканируйте ваше лицо.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-8 md:grid-cols-[1fr_50%]">
         <div className="space-y-6">
           <div className="animate-fade-in-scale">
             <WebcamCapture
@@ -196,21 +197,6 @@ const RestoreFromDB: React.FC = () => {
               disabled={!helperData}
               disabledText="Найдите данные кошелька в базе перед сканированием"
             />
-
-            {error && (
-              <Alert variant="destructive" className="mt-4">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {successMessage && (
-              <Alert
-                variant="default"
-                className="mt-4 bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
-              >
-                <AlertDescription>{successMessage}</AlertDescription>
-              </Alert>
-            )}
           </div>
         </div>
 
@@ -381,6 +367,20 @@ const RestoreFromDB: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+          {error && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {successMessage && (
+            <Alert
+              variant="default"
+              className="mt-4 bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
+            >
+              <AlertDescription>{successMessage}</AlertDescription>
+            </Alert>
+          )}
         </div>
       </div>
     </div>

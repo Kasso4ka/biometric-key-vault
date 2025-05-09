@@ -9,7 +9,7 @@ import { useState } from "react";
 export default function Home() {
   const [activeTab, setActiveTab] = useState<string>("generate");
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full not-visited:py-10">
+    <div className="flex flex-col items-center justify-center w-full px-[10%] h-full not-visited:py-10">
       <div className="animate-fade-in">
         <h1 className="text-4xl font-bold text-center mb-2">
           Биометрический Генератор Кошельков
@@ -19,7 +19,11 @@ export default function Home() {
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="mb-8 w-full h-full"
+      >
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="generate">Генерация</TabsTrigger>
           <TabsTrigger value="recover-file">

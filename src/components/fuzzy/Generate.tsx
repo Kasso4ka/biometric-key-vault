@@ -146,26 +146,19 @@ const Generate: React.FC = ({}) => {
 
   return (
     <div>
-      <Card className="mt-2 mb-4">
-        <CardContent>Информация о сервисе </CardContent>
-      </Card>
-      <div className="grid gap-8 md:grid-cols-[1fr_400px]">
+      <div className="animate-fade-in-slide">
+        <Card className="mt-2 mb-4">
+          <CardContent>
+            <h2 className="text-xl font-semibold mb-2">Генерация кошелька</h2>
+            <p>
+              {`Сгенерируйте приватный ключ и адрес кошелька Ethereum. Вы можете сохранить вспомогательные данные (helper data) себе на устройство или сохранить их в базе данных. Внимание! Сервис не хранит ваши приватные ключи и биометрические данные. Вспомогательные данные сами по себе не дают возможности получить приватный ключ. `}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-8 md:grid-cols-[1fr_50%]">
         <div className="animate-fade-in-scale">
           <WebcamCapture onCapture={handleCapture} loading={isGenerating} />
-          {error && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {successMessage && (
-            <Alert
-              variant="default"
-              className="mt-4 bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
-            >
-              <AlertDescription>{successMessage}</AlertDescription>
-            </Alert>
-          )}
         </div>
 
         <div className="animate-fade-in-slide">
@@ -187,7 +180,7 @@ const Generate: React.FC = ({}) => {
                   Приватный ключ
                 </Label>
                 <div className="relative">
-                  <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md font-mono text-sm break-all min-h-[60px] flex items-center">
+                  <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md font-mono text-sm break-all min-h-[60px] flex items-center justify-between">
                     {walletData ? (
                       <span className="animate-fade-in">
                         {walletData.privateKey}
@@ -197,17 +190,17 @@ const Generate: React.FC = ({}) => {
                         Приватный ключ появится здесь
                       </span>
                     )}
+                    {walletData && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="right-2 top-2"
+                        onClick={() => copyToClipboard(walletData.privateKey)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-                  {walletData && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="absolute right-2 top-2"
-                      onClick={() => copyToClipboard(walletData.privateKey)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  )}
                 </div>
               </div>
 
@@ -216,7 +209,7 @@ const Generate: React.FC = ({}) => {
                   Адрес кошелька
                 </Label>
                 <div className="relative">
-                  <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md font-mono text-sm break-all min-h-[60px] flex items-center">
+                  <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md font-mono text-sm break-all min-h-[60px] flex items-center justify-between">
                     {walletData ? (
                       <span className="animate-fade-in">
                         {walletData.walletAddress}
@@ -226,17 +219,19 @@ const Generate: React.FC = ({}) => {
                         Адрес кошелька появится здесь
                       </span>
                     )}
+                    {walletData && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="right-2 top-2"
+                        onClick={() =>
+                          copyToClipboard(walletData.walletAddress)
+                        }
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-                  {walletData && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="absolute right-2 top-2"
-                      onClick={() => copyToClipboard(walletData.walletAddress)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  )}
                 </div>
               </div>
             </CardContent>
@@ -254,6 +249,20 @@ const Generate: React.FC = ({}) => {
               )}
             </CardFooter>
           </Card>
+          {error && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {successMessage && (
+            <Alert
+              variant="default"
+              className="mt-4 bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
+            >
+              <AlertDescription>{successMessage}</AlertDescription>
+            </Alert>
+          )}
         </div>
       </div>
     </div>

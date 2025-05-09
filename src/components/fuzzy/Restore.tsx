@@ -164,19 +164,20 @@ const Restore: React.FC = () => {
 
   return (
     <div>
-      <Card className="mt-2 mb-4">
-        <CardContent>
-          <h2 className="text-xl font-semibold mb-2">
-            Восстановление кошелька
-          </h2>
-          <p>
-            Для восстановления доступа к кошельку загрузите файл с
-            вспомогательными данными и затем отсканируйте ваше лицо.
-          </p>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-8 md:grid-cols-[1fr_400px]">
+      <div className="animate-fade-in-slide">
+        <Card className="mt-2 mb-4">
+          <CardContent>
+            <h2 className="text-xl font-semibold mb-2">
+              Восстановление кошелька
+            </h2>
+            <p>
+              Для восстановления доступа к кошельку загрузите файл с
+              вспомогательными данными и затем отсканируйте ваше лицо.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-8 md:grid-cols-[1fr_50%]">
         <div className="space-y-6">
           <div className="animate-fade-in-scale">
             <WebcamCapture
@@ -190,21 +191,6 @@ const Restore: React.FC = () => {
               disabled={!helperData}
               disabledText="Загрузите файл с helper data перед сканированием"
             />
-
-            {error && (
-              <Alert variant="destructive" className="mt-4">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {successMessage && (
-              <Alert
-                variant="default"
-                className="mt-4 bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
-              >
-                <AlertDescription>{successMessage}</AlertDescription>
-              </Alert>
-            )}
           </div>
         </div>
 
@@ -283,7 +269,7 @@ const Restore: React.FC = () => {
                   Приватный ключ
                 </Label>
                 <div className="">
-                  <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md font-mono text-sm break-all min-h-[60px] flex items-center">
+                  <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md font-mono text-sm break-all min-h-[60px] flex items-center justify-between">
                     {walletData ? (
                       <span className="animate-fade-in">
                         {walletData.privateKey}
@@ -312,7 +298,7 @@ const Restore: React.FC = () => {
                   Адрес кошелька
                 </Label>
                 <div className="relative">
-                  <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md font-mono text-sm break-all min-h-[60px] flex items-center">
+                  <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md font-mono text-sm break-all min-h-[60px] flex items-center justify-between">
                     {walletData ? (
                       <span className="animate-fade-in">
                         {walletData.walletAddress}
@@ -339,6 +325,20 @@ const Restore: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+          {error && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {successMessage && (
+            <Alert
+              variant="default"
+              className="mt-4 bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
+            >
+              <AlertDescription>{successMessage}</AlertDescription>
+            </Alert>
+          )}
         </div>
       </div>
     </div>

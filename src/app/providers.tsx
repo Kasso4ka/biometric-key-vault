@@ -9,7 +9,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      <main className="min-h-screen bg-gradient-to-b from-background to-muted/50">
+      <main className="h-screen w-full px-10 bg-gradient-to-b from-background to-muted/50">
         {children}
       </main>
     </ThemeProvider>
