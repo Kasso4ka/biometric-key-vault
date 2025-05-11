@@ -3,6 +3,7 @@
 import Generate from "@/components/fuzzy/Generate";
 import Restore from "@/components/fuzzy/Restore";
 import RestoreFromDB from "@/components/fuzzy/RetoreFromDb";
+import VideoRecordPage from "@/components/no-fuzzy/VideoRecordPage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 
@@ -32,6 +33,7 @@ export default function Home() {
           <TabsTrigger value="recover-address">
             Восстановление по адресу
           </TabsTrigger>
+          <TabsTrigger value="test">Тест</TabsTrigger>
         </TabsList>
 
         <TabsContent value="generate">
@@ -44,6 +46,9 @@ export default function Home() {
 
         <TabsContent value="recover-address">
           <RestoreFromDB />
+        </TabsContent>
+        <TabsContent value="test">
+          <VideoRecordPage />
         </TabsContent>
       </Tabs>
     </div>
