@@ -1,17 +1,10 @@
-import {
-  Camera,
-  Loader2,
-  ShieldCheck,
-  Video,
-  StopCircle,
-  Download,
-} from "lucide-react";
+import { Camera, Loader2, ShieldCheck, Video, StopCircle } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "./ui/button";
 
-interface VideoRecorderProps {
+interface NoFuzzyWebCameraProps {
   buttonText?: string;
   recordingButtonText?: string;
   stopRecordingText?: string;
@@ -22,9 +15,12 @@ interface VideoRecorderProps {
   disabled?: boolean;
   disabledText?: string;
   maxRecordingTimeMs?: number; // максимальное время записи в миллисекундах
+  maxFrames?: number; // максимальное количество кадров для захвата
+  onFrameReceived?: (imageData: string, frameIndex: number) => void; // колбэк получения кадра
+  onRecordingComplete?: () => void; // колбэк завершения записи
 }
 
-const VideoRecorder: React.FC<VideoRecorderProps> = ({
+const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
   buttonText = "Начать сканирование",
   recordingButtonText = "Начать запись",
   stopRecordingText = "Остановить запись",
@@ -35,24 +31,27 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
   disabled = false,
   disabledText = "Функция недоступна",
   maxRecordingTimeMs = 10000, // 10 секунд по умолчанию
+  maxFrames = 150, // 150 кадров по умолчанию
+  onFrameReceived = () => {}, // пустая функция по умолчанию
+  onRecordingComplete = () => {}, // пустая функция по умолчанию
 }) => {
   const [isCapturing, setIsCapturing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [recordedVideo, setRecordedVideo] = useState<string | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [capturedFrames, setCapturedFrames] = useState(0);
   const [browserSupport, setBrowserSupport] = useState<{
-    mediaRecorder: boolean;
+    canvas: boolean;
     getUserMedia: boolean;
   }>({
-    mediaRecorder: false,
+    canvas: false,
     getUserMedia: false,
   });
 
   // Проверяем поддержку браузером
   useEffect(() => {
     setBrowserSupport({
-      mediaRecorder: "MediaRecorder" in window,
+      canvas: !!document.createElement("canvas").getContext("2d"),
       getUserMedia: !!(
         navigator.mediaDevices && navigator.mediaDevices.getUserMedia
       ),
@@ -60,10 +59,27 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
   }, []);
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recordedChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const frameCountRef = useRef<number>(0);
+  const isCapturingRef = useRef<boolean>(false);
+  const completedRef = useRef<boolean>(false);
+
+  // Используем useCallback для onRecordingCompletedHandler, чтобы избежать лишних вызовов
+  const onRecordingCompletedHandler = useCallback(() => {
+    // Проверяем, не был ли уже вызван колбэк
+    if (completedRef.current) return;
+
+    // Устанавливаем флаг, что колбэк был вызван
+    completedRef.current = true;
+
+    console.log(
+      `Calling onRecordingComplete with ${frameCountRef.current} frames`
+    );
+
+    // Вызываем колбэк завершения записи
+    onRecordingComplete();
+  }, [onRecordingComplete]);
 
   useEffect(() => {
     return () => {
@@ -77,10 +93,8 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
   const startWebcam = async () => {
     setCameraError(null);
     try {
-      // Проверяем поддержку MediaRecorder API
-      if (!window.MediaRecorder) {
-        throw new Error("MediaRecorder API не поддерживается в вашем браузере");
-      }
+      // Сбрасываем флаг завершения
+      completedRef.current = false;
 
       // Запрашиваем доступ к устройствам
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -89,14 +103,13 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
           width: { ideal: 640 },
           height: { ideal: 480 },
         },
-        audio: true, // включаем запись звука
+        audio: false, // звук не нужен для захвата кадров
       });
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         setIsCapturing(true);
-        setRecordedVideo(null); // сбрасываем предыдущее видео при новом запуске камеры
 
         // Проверяем, есть ли видеодорожки в потоке
         const videoTracks = stream.getVideoTracks();
@@ -156,119 +169,122 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     setIsCapturing(false);
 
     if (isRecording) {
-      stopRecording();
+      stopFrameCapture();
     }
   };
 
-  const startRecording = () => {
-    if (!streamRef.current) return;
+  const startFrameCapture = () => {
+    if (!streamRef.current || !videoRef.current) return;
 
-    recordedChunksRef.current = [];
+    // Сбрасываем флаг завершения при старте новой записи
+    completedRef.current = false;
+
     setRecordingTime(0);
+    setCapturedFrames(0);
+    frameCountRef.current = 0;
+    setIsRecording(true);
+    isCapturingRef.current = true;
 
-    try {
-      // Проверка поддерживаемых MIME-типов
-      const getMimeType = () => {
-        const types = [
-          "video/webm",
-          "video/webm;codecs=vp9",
-          "video/webm;codecs=vp8",
-          "video/webm;codecs=h264",
-          "video/mp4",
-          "video/mp4;codecs=h264",
-        ];
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
 
-        for (const type of types) {
-          if (MediaRecorder.isTypeSupported(type)) {
-            console.log("Используется MIME-тип:", type);
-            return type;
-          }
-        }
-
-        return ""; // Если ни один тип не поддерживается, будет использован дефолтный
-      };
-
-      const mimeType = getMimeType();
-      const options = mimeType ? { mimeType } : undefined;
-      const mediaRecorder = new MediaRecorder(streamRef.current, options);
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          recordedChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunksRef.current, {
-          type: "video/webm",
-        });
-        const videoURL = URL.createObjectURL(blob);
-        setRecordedVideo(videoURL);
-        setIsRecording(false);
-      };
-
-      // Запускаем таймер для отображения времени записи
-      timerRef.current = setInterval(() => {
-        setRecordingTime((prev) => {
-          const newTime = prev + 100;
-          if (newTime >= maxRecordingTimeMs) {
-            stopRecording();
-          }
-          return newTime;
-        });
-      }, 100);
-
-      mediaRecorder.start(100); // собираем данные каждые 100 мс
-      mediaRecorderRef.current = mediaRecorder;
-      setIsRecording(true);
-
-      // Устанавливаем таймаут для автоматической остановки записи
-      setTimeout(() => {
-        if (mediaRecorderRef.current?.state === "recording") {
-          stopRecording();
-        }
-      }, maxRecordingTimeMs);
-    } catch (error) {
-      console.error("Ошибка при начале записи:", error);
-      setCameraError(
-        "Не удалось начать запись. Проверьте поддержку в вашем браузере."
-      );
+    if (!ctx) {
+      setCameraError("Не удалось создать контекст canvas для захвата кадров");
+      isCapturingRef.current = false;
+      setIsRecording(false);
+      return;
     }
+
+    const video = videoRef.current;
+
+    // Ожидаем, пока видео полностью загрузится для получения правильных размеров
+    const checkVideoReady = () => {
+      if (video.videoWidth > 0 && video.videoHeight > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        startCapturingFrames(canvas, ctx, video);
+      } else {
+        setTimeout(checkVideoReady, 100);
+      }
+    };
+
+    checkVideoReady();
   };
 
-  const stopRecording = () => {
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state === "recording"
-    ) {
-      mediaRecorderRef.current.stop();
-    }
+  const startCapturingFrames = (
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D,
+    video: HTMLVideoElement
+  ) => {
+    console.log(
+      `Starting frame capture: Canvas size ${canvas.width}x${canvas.height}`
+    );
+
+    // Запускаем таймер для отображения времени записи и захвата кадров
+    timerRef.current = setInterval(() => {
+      if (!isCapturingRef.current) return;
+
+      setRecordingTime((prev) => {
+        const newTime = prev + 100;
+        if (newTime >= maxRecordingTimeMs) {
+          stopFrameCapture();
+        }
+        return newTime;
+      });
+
+      // Захватываем кадр
+      if (frameCountRef.current < maxFrames && isCapturingRef.current) {
+        try {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = canvas.toDataURL("image/jpeg", 0.8); // JPEG для уменьшения размера
+
+          // Увеличиваем счетчик перед отправкой кадра
+          const currentFrame = frameCountRef.current;
+          frameCountRef.current = currentFrame + 1;
+
+          // Безопасно обновляем состояние React
+          // Это обновление не должно вызывать побочных эффектов
+          setCapturedFrames(currentFrame + 1);
+
+          // Отправляем кадр через колбэк после обновления счетчиков
+          onFrameReceived(imageData, currentFrame);
+
+          console.log(`Captured frame ${currentFrame + 1}/${maxFrames}`);
+
+          // Если достигли максимального числа кадров, останавливаем захват
+          if (currentFrame + 1 >= maxFrames) {
+            console.log(`Reached max frames (${maxFrames}), stopping capture`);
+            stopFrameCapture();
+          }
+        } catch (err) {
+          console.error("Ошибка при захвате кадра:", err);
+          setCameraError("Ошибка при захвате кадра. Проверьте работу камеры.");
+          stopFrameCapture();
+        }
+      }
+    }, 100); // захватываем кадр каждые 100 мс (~ 10 FPS)
+  };
+
+  const stopFrameCapture = () => {
+    console.log(
+      `Stopping frame capture, captured ${frameCountRef.current} frames`
+    );
 
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-  };
 
-  const downloadVideo = () => {
-    if (!recordedVideo) return;
+    isCapturingRef.current = false;
+    setIsRecording(false);
 
-    // Определяем расширение файла в зависимости от типа записанных данных
-    const blob = recordedChunksRef.current[0];
-    let extension = "webm";
-
-    if (blob && blob.type) {
-      if (blob.type.includes("mp4")) {
-        extension = "mp4";
-      }
+    // Если запись была остановлена и были захвачены кадры
+    if (frameCountRef.current > 0) {
+      // Используем setTimeout, чтобы избежать обновления состояния во время рендеринга
+      setTimeout(() => {
+        onRecordingCompletedHandler();
+      }, 100);
     }
-
-    const a = document.createElement("a");
-    a.href = recordedVideo;
-    a.download = `recorded-video-${new Date().toISOString()}.${extension}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
   };
 
   // Форматирование времени для отображения
@@ -302,7 +318,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
             </Alert>
           )}
 
-          {!isCapturing && !recordedVideo && !cameraError && (
+          {!isCapturing && !cameraError && (
             <div className="text-center p-8">
               <Camera className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <p className="text-gray-400">
@@ -318,25 +334,16 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
             playsInline
             muted
             className={`w-full h-full object-cover ${
-              !isCapturing || recordedVideo ? "hidden" : ""
+              !isCapturing ? "hidden" : ""
             }`}
           />
-
-          {/* Отображение записанного видео */}
-          {recordedVideo && (
-            <video
-              src={recordedVideo}
-              controls
-              className="w-full h-full object-contain"
-            />
-          )}
 
           {/* Индикатор записи */}
           {isRecording && (
             <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded-full flex items-center gap-2">
               <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
               <span>
-                {formatTime(recordingTime)} / {formatTime(maxRecordingTimeMs)}
+                Кадр {capturedFrames} / {maxFrames}
               </span>
             </div>
           )}
@@ -350,7 +357,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-4 p-6">
-        {!isCapturing && !recordedVideo ? (
+        {!isCapturing ? (
           <Button
             onClick={startWebcam}
             className="w-full"
@@ -359,9 +366,9 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
             <Camera className="mr-2 h-4 w-4" />
             {buttonText}
           </Button>
-        ) : isCapturing && !isRecording && !recordedVideo ? (
+        ) : isCapturing && !isRecording ? (
           <Button
-            onClick={startRecording}
+            onClick={startFrameCapture}
             className="w-full"
             disabled={loading || disabled}
           >
@@ -370,38 +377,15 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
           </Button>
         ) : isCapturing && isRecording ? (
           <Button
-            onClick={stopRecording}
+            onClick={stopFrameCapture}
             variant="destructive"
             className="w-full"
-            disabled={loading || disabled}
+            disabled={loading || disabled || capturedFrames < maxFrames}
           >
             <StopCircle className="mr-2 h-4 w-4" />
             {stopRecordingText}
           </Button>
         ) : null}
-
-        {recordedVideo && (
-          <div className="w-full flex gap-2">
-            <Button
-              onClick={downloadVideo}
-              className="flex-1"
-              variant="outline"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Скачать видео
-            </Button>
-            <Button
-              onClick={() => {
-                setRecordedVideo(null);
-                startWebcam();
-              }}
-              className="flex-1"
-            >
-              <Camera className="mr-2 h-4 w-4" />
-              Снова запустить камеру
-            </Button>
-          </div>
-        )}
 
         {disabled && (
           <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
@@ -409,15 +393,15 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
           </p>
         )}
 
-        {(!browserSupport.mediaRecorder || !browserSupport.getUserMedia) && (
+        {(!browserSupport.canvas || !browserSupport.getUserMedia) && (
           <Alert variant="destructive" className="mt-2">
             <AlertDescription>
               <p className="font-medium">
                 Ваш браузер не поддерживает необходимые API:
               </p>
               <ul className="text-sm mt-1">
-                {!browserSupport.mediaRecorder && (
-                  <li>MediaRecorder API не поддерживается</li>
+                {!browserSupport.canvas && (
+                  <li>Canvas API не поддерживается</li>
                 )}
                 {!browserSupport.getUserMedia && (
                   <li>getUserMedia API не поддерживается</li>
@@ -435,4 +419,4 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
   );
 };
 
-export default VideoRecorder;
+export default NoFuzzyWebCamera;

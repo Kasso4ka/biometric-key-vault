@@ -3,7 +3,7 @@
 import Generate from "@/components/fuzzy/Generate";
 import Restore from "@/components/fuzzy/Restore";
 import RestoreFromDB from "@/components/fuzzy/RetoreFromDb";
-import VideoRecordPage from "@/components/no-fuzzy/VideoRecordPage";
+import GenerateOrRecover from "@/components/no-fuzzy/GenerateOrRecover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 
@@ -48,7 +48,7 @@ export default function Home() {
           <RestoreFromDB />
         </TabsContent>
         <TabsContent value="test">
-          <VideoRecordPage />
+          <GenerateOrRecover />
         </TabsContent>
       </Tabs>
     </div>
