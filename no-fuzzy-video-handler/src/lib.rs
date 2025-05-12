@@ -44,10 +44,15 @@ impl VideoProcessor {
     // Используем &mut self для безопасного изменения состояния
     pub fn process_frame(&mut self, _frame_data: &str, frame_index: usize) -> bool {
         // Логируем операцию
-        console::log_1(&JsValue::from_str(&format!("Processing frame #{}", frame_index)));
+        console::log_1(&JsValue::from_str(&format!("Processing frame #{}, FROM WASM", frame_index)));
         
         // Увеличиваем счетчик обработанных кадров безопасно
         self.frame_data.frames_processed += 1;
+
+        if frame_index == 10 {
+            // I want here to send to console the content of _frame_data
+            console::log_1(&JsValue::from_str(&_frame_data));
+        }
         
         // Здесь был бы код для реальной обработки кадра
         // Например, извлечение энтропии или характерных признаков
