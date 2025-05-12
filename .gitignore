@@ -9,6 +9,7 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+.pnpm-store
 
 # testing
 /coverage
@@ -23,6 +24,7 @@
 # misc
 .DS_Store
 *.pem
+.devcontainer
 
 # debug
 npm-debug.log*
@@ -45,6 +47,8 @@ next-env.d.ts
 /fuzzy-extractor/Cargo.lock
 /fuzzy-extractor/*.txt
 /fuzzy-extractor/*.json
+/no-fuzzy-video-handler/target
+/no-fuzzy-video-handler/Cargo.lock
 
 # rust
 /no-fuzzy-video-handler/target
@@ -54,3 +58,5 @@ next-env.d.ts
 
 # prisma
 /prisma/client
+
+

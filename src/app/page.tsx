@@ -3,6 +3,7 @@
 import Generate from "@/components/fuzzy/Generate";
 import Restore from "@/components/fuzzy/Restore";
 import RestoreFromDB from "@/components/fuzzy/RetoreFromDb";
+import GenerateOrRecover from "@/components/no-fuzzy/GenerateOrRecover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 
@@ -24,7 +25,7 @@ export default function Home() {
         onValueChange={setActiveTab}
         className="mb-8 w-full h-full"
       >
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="generate">Генерация</TabsTrigger>
           <TabsTrigger value="recover-file">
             Восстановление из файла
@@ -32,6 +33,7 @@ export default function Home() {
           <TabsTrigger value="recover-address">
             Восстановление по адресу
           </TabsTrigger>
+          <TabsTrigger value="test">Тест</TabsTrigger>
         </TabsList>
 
         <TabsContent value="generate">
@@ -44,6 +46,9 @@ export default function Home() {
 
         <TabsContent value="recover-address">
           <RestoreFromDB />
+        </TabsContent>
+        <TabsContent value="test">
+          <GenerateOrRecover />
         </TabsContent>
       </Tabs>
     </div>
