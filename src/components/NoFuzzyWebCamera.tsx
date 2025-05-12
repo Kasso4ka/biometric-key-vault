@@ -30,7 +30,7 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
   loadingText = "Обработка данных...",
   disabled = false,
   disabledText = "Функция недоступна",
-  maxRecordingTimeMs = 10000, // 10 секунд по умолчанию
+  maxRecordingTimeMs = 20000, // 10 секунд по умолчанию
   maxFrames = 150, // 150 кадров по умолчанию
   onFrameReceived = () => {}, // пустая функция по умолчанию
   onRecordingComplete = () => {}, // пустая функция по умолчанию
@@ -103,7 +103,7 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
           width: { ideal: 640 },
           height: { ideal: 480 },
         },
-        audio: false, // звук не нужен для захвата кадров
+        audio: false,
       });
 
       if (videoRef.current) {
@@ -285,13 +285,6 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
         onRecordingCompletedHandler();
       }, 100);
     }
-  };
-
-  // Форматирование времени для отображения
-  const formatTime = (timeMs: number) => {
-    const seconds = Math.floor(timeMs / 1000);
-    const milliseconds = Math.floor((timeMs % 1000) / 10);
-    return `${seconds}.${milliseconds.toString().padStart(2, "0")}`;
   };
 
   return (

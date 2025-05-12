@@ -1,91 +1,49 @@
-import { useEffect, useState } from "react";
-import init, { VideoProcessor } from "no-fuzzy-video-handler";
+// Заменяем импорт WASM модуля на новый интерфейс для работы с API
+// import init, { VideoProcessor } from "no-fuzzy-video-handler";
 
 class NoFuzzyFaceToMnemonicService {
-  private videoProcessor: VideoProcessor | null = null;
   private initialized = false;
   private collectedFrames: number = 0;
-  private maxFrames: number = 150;
   private initializationPromise: Promise<boolean> | null = null;
+
+  // Массив для хранения base64 данных изображений
+  private frames: string[] = [];
+
+  // Захардкодим URL API сервиса
+  private readonly apiUrl =
+    "https://d2af-212-47-146-31.ngrok-free.app/process_images";
 
   async initialize(): Promise<boolean> {
     if (this.initialized) return true;
 
-    // Если инициализация уже запущена, возвращаем существующий промис
     if (this.initializationPromise) {
       return this.initializationPromise;
     }
 
-    // Создаем промис инициализации
-    this.initializationPromise = new Promise<boolean>(
-      async (resolve, reject) => {
-        try {
-          console.log("Initializing NoFuzzyFaceToMnemonicService...");
-          await init();
-          console.log(
-            "WASM module initialized, creating VideoProcessor instance..."
-          );
-
-          try {
-            this.videoProcessor = new VideoProcessor();
-            this.initialized = true;
-            this.collectedFrames = 0;
-            console.log(
-              "NoFuzzyFaceToMnemonicService initialization completed successfully"
-            );
-            resolve(true);
-          } catch (err) {
-            console.error("Error creating VideoProcessor instance:", err);
-            reject(new Error(`Failed to create VideoProcessor: ${err}`));
-          }
-        } catch (error) {
-          console.error(
-            "Failed to initialize NoFuzzyFaceToMnemonicService:",
-            error
-          );
-          reject(error);
-        } finally {
-          // Очищаем промис инициализации, если он завершен
-          this.initializationPromise = null;
-        }
+    this.initializationPromise = new Promise<boolean>(async (resolve) => {
+      try {
+        console.log(
+          "Initializing NoFuzzyFaceToMnemonicService with API integration..."
+        );
+        this.frames = [];
+        this.collectedFrames = 0;
+        this.initialized = true;
+        console.log(
+          "NoFuzzyFaceToMnemonicService initialization completed successfully"
+        );
+        resolve(true);
+      } catch (error) {
+        console.error(
+          "Failed to initialize NoFuzzyFaceToMnemonicService:",
+          error
+        );
+        resolve(false);
+      } finally {
+        this.initializationPromise = null;
       }
-    );
+    });
 
     return this.initializationPromise;
-  }
-
-  async helloWorld(): Promise<string> {
-    try {
-      if (!this.initialized) {
-        await this.initialize();
-      }
-
-      if (!this.videoProcessor) {
-        throw new Error("VideoProcessor is not initialized");
-      }
-
-      return this.videoProcessor.process_hello_world();
-    } catch (error) {
-      console.error("Error calling hello world:", error);
-      throw error;
-    }
-  }
-
-  async calculateSum(a: number, b: number): Promise<number> {
-    try {
-      if (!this.initialized) {
-        await this.initialize();
-      }
-
-      if (!this.videoProcessor) {
-        throw new Error("VideoProcessor is not initialized");
-      }
-
-      return this.videoProcessor.calculate_sum(a, b);
-    } catch (error) {
-      console.error("Error calculating sum:", error);
-      throw error;
-    }
   }
 
   /**
@@ -102,33 +60,20 @@ class NoFuzzyFaceToMnemonicService {
         await this.initialize();
       }
 
-      if (!this.videoProcessor) {
-        throw new Error("VideoProcessor is not initialized");
-      }
-
       // Кадр передаем без префикса data:image/...
       const base64Data = frameData.split(",")[1] || frameData;
 
-      // Создаем локальную копию процессора, чтобы избежать проблем с параллельным доступом
-      const processor = this.videoProcessor;
-
-      // Обрабатываем кадр через WASM модуль
-      try {
-        // console.log(`Processing frame ${frameIndex} through WASM...`);
-        const success = processor.process_frame(base64Data, frameIndex);
-        if (!success) {
-          throw new Error(
-            `WASM processing returned false for frame ${frameIndex}`
-          );
-        }
-
-        // Получаем обновленный счетчик кадров
-        this.collectedFrames = processor.get_frames_processed();
-        // console.log(`Frame ${frameIndex} processed. Total processed frames: ${this.collectedFrames}`);
-      } catch (err) {
-        console.error("WASM error processing frame:", err);
-        throw new Error(`WASM error: ${err}`);
+      // Сохраняем кадр в массив по индексу
+      if (frameIndex >= this.frames.length) {
+        // Расширяем массив, если нужно
+        this.frames.length = frameIndex + 1;
       }
+      this.frames[frameIndex] = base64Data;
+      this.collectedFrames++;
+
+      console.log(
+        `Frame ${frameIndex} stored. Total frames: ${this.collectedFrames}`
+      );
 
       return;
     } catch (error) {
@@ -138,7 +83,7 @@ class NoFuzzyFaceToMnemonicService {
   }
 
   /**
-   * Генерирует мнемоническую фразу на основе собранных кадров
+   * Генерирует мнемоническую фразу на основе собранных кадров через API
    * @returns Мнемоническая фраза из 12 или 24 слов
    */
   async generateMnemonic(): Promise<string> {
@@ -147,50 +92,49 @@ class NoFuzzyFaceToMnemonicService {
         await this.initialize();
       }
 
-      if (!this.videoProcessor) {
-        throw new Error("VideoProcessor is not initialized");
-      }
-
-      // Получаем текущий счетчик обработанных кадров
-      this.collectedFrames = this.videoProcessor.get_frames_processed();
       console.log(`Generating mnemonic from ${this.collectedFrames} frames...`);
 
-      if (this.collectedFrames === 0) {
+      if (this.collectedFrames === 0 || this.frames.length === 0) {
         throw new Error(
           "Не обработано ни одного кадра. Невозможно сгенерировать мнемонику."
         );
       }
 
-      // Симулируем задержку обработки для UI
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Получаем только валидные кадры (не undefined)
+      const validFrames = this.frames.filter((frame) => !!frame);
 
-      // Создаем локальную копию процессора, чтобы избежать проблем с параллельным доступом
-      const processor = this.videoProcessor;
+      console.log(`Sending ${validFrames.length} frames to the API...`);
 
-      // Вызываем метод генерации мнемоника из WASM модуля
-      let mnemonic: string;
-      try {
-        mnemonic = processor.generate_mnemonic();
-        console.log("Mnemonic generated successfully");
-      } catch (err) {
-        console.error("WASM error generating mnemonic:", err);
-        throw new Error(`WASM error: ${err}`);
-      }
+      // Отправляем запрос на API
+      console.log(validFrames);
+      const response = await fetch(this.apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          images: validFrames,
+        }),
+      });
 
-      // Сбрасываем состояние модуля
-      try {
-        processor.reset();
-        this.collectedFrames = 0;
-        console.log("VideoProcessor state reset after mnemonic generation");
-      } catch (resetErr) {
-        console.warn(
-          "Warning: Failed to reset VideoProcessor state:",
-          resetErr
+      if (!response.ok) {
+        throw new Error(
+          `API вернул ошибку: ${response.status} ${response.statusText}`
         );
-        // Продолжаем выполнение, не выбрасывая ошибку
       }
 
-      return mnemonic;
+      const data = await response.json();
+
+      if (!data.mnemonic) {
+        throw new Error("API не вернул мнемоническую фразу");
+      }
+
+      console.log("Mnemonic received successfully from API");
+
+      // Сбрасываем состояние после получения мнемоники
+      this.resetFrameProcessing();
+
+      return data.mnemonic;
     } catch (error) {
       console.error("Error generating mnemonic:", error);
       throw error;
@@ -201,49 +145,17 @@ class NoFuzzyFaceToMnemonicService {
    * Сбрасывает состояние обработчика кадров
    */
   resetFrameProcessing(): void {
-    if (this.videoProcessor) {
-      try {
-        this.videoProcessor.reset();
-        console.log("VideoProcessor state reset");
-      } catch (err) {
-        console.error("Error resetting VideoProcessor state:", err);
-      }
-    }
+    this.frames = [];
     this.collectedFrames = 0;
+    console.log("Frame processing state reset");
   }
-}
 
-// React hook для использования сервиса в компонентах
-export function useNoFuzzyFaceToMnemonic() {
-  const [service] = useState(new NoFuzzyFaceToMnemonicService());
-  const [isReady, setIsReady] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function init() {
-      try {
-        const success = await service.initialize();
-        if (mounted) {
-          setIsReady(success);
-        }
-      } catch (err) {
-        console.error("Error initializing service:", err);
-        if (mounted) {
-          setError(err instanceof Error ? err : new Error(String(err)));
-        }
-      }
-    }
-
-    init();
-
-    return () => {
-      mounted = false;
-    };
-  }, [service]);
-
-  return { service, isReady, error };
+  /**
+   * Возвращает количество обработанных кадров
+   */
+  getFramesProcessed(): number {
+    return this.collectedFrames;
+  }
 }
 
 // Экспортируем singleton для использования вне React компонентов

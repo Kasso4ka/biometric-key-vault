@@ -43,12 +43,10 @@ const GenerateOrRecover: React.FC = () => {
     };
   }, []);
 
-  // Обработчик получения кадра из NoFuzzyWebCamera
   const handleFrameReceived = useCallback(
     async (imageData: string, frameIndex: number) => {
       // console.log(`Frame received: ${frameIndex}`);
 
-      // Обновляем счетчик кадров
       setRecordedFramesCount(frameIndex + 1);
 
       // Отправляем кадр в WASM модуль
@@ -65,7 +63,6 @@ const GenerateOrRecover: React.FC = () => {
     []
   );
 
-  // Обработчик окончания записи
   const handleRecordingComplete = useCallback(async () => {
     console.log("Recording complete, generating mnemonic...");
 
@@ -89,7 +86,6 @@ const GenerateOrRecover: React.FC = () => {
     }
   }, []);
 
-  // Функция копирования в буфер обмена
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setSuccessMessage("Мнемоническая фраза скопирована в буфер обмена!");
