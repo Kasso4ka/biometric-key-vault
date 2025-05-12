@@ -46,5 +46,11 @@ next-env.d.ts
 /fuzzy-extractor/*.txt
 /fuzzy-extractor/*.json
 
+# rust
+/no-fuzzy-video-handler/target
+/no-fuzzy-video-handler/Cargo.lock
+/no-fuzzy-video-handler/*.txt
+/no-fuzzy-video-handler/*.json
+
 # prisma
 /prisma/client
