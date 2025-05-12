@@ -1,4 +1,4 @@
-import { Camera, Loader2, ShieldCheck, Video, StopCircle } from "lucide-react";
+import { Camera, Loader2, Video, StopCircle } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -14,10 +14,9 @@ interface NoFuzzyWebCameraProps {
   loadingText?: string;
   disabled?: boolean;
   disabledText?: string;
-  maxRecordingTimeMs?: number; // максимальное время записи в миллисекундах
-  maxFrames?: number; // максимальное количество кадров для захвата
-  onFrameReceived?: (imageData: string, frameIndex: number) => void; // колбэк получения кадра
-  onRecordingComplete?: () => void; // колбэк завершения записи
+  maxFrames?: number;
+  onFrameReceived?: (imageData: string, frameIndex: number) => void;
+  onRecordingComplete?: () => void;
 }
 
 const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
@@ -30,14 +29,12 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
   loadingText = "Обработка данных...",
   disabled = false,
   disabledText = "Функция недоступна",
-  maxRecordingTimeMs = 20000, // 10 секунд по умолчанию
-  maxFrames = 150, // 150 кадров по умолчанию
-  onFrameReceived = () => {}, // пустая функция по умолчанию
-  onRecordingComplete = () => {}, // пустая функция по умолчанию
+  maxFrames = 150,
+  onFrameReceived = () => {},
+  onRecordingComplete = () => {},
 }) => {
   const [isCapturing, setIsCapturing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [capturedFrames, setCapturedFrames] = useState(0);
   const [browserSupport, setBrowserSupport] = useState<{
@@ -48,7 +45,6 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
     getUserMedia: false,
   });
 
-  // Проверяем поддержку браузером
   useEffect(() => {
     setBrowserSupport({
       canvas: !!document.createElement("canvas").getContext("2d"),
@@ -65,19 +61,15 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
   const isCapturingRef = useRef<boolean>(false);
   const completedRef = useRef<boolean>(false);
 
-  // Используем useCallback для onRecordingCompletedHandler, чтобы избежать лишних вызовов
   const onRecordingCompletedHandler = useCallback(() => {
-    // Проверяем, не был ли уже вызван колбэк
     if (completedRef.current) return;
 
-    // Устанавливаем флаг, что колбэк был вызван
     completedRef.current = true;
 
     console.log(
       `Calling onRecordingComplete with ${frameCountRef.current} frames`
     );
 
-    // Вызываем колбэк завершения записи
     onRecordingComplete();
   }, [onRecordingComplete]);
 
@@ -93,10 +85,8 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
   const startWebcam = async () => {
     setCameraError(null);
     try {
-      // Сбрасываем флаг завершения
       completedRef.current = false;
 
-      // Запрашиваем доступ к устройствам
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "user",
@@ -111,7 +101,6 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
         streamRef.current = stream;
         setIsCapturing(true);
 
-        // Проверяем, есть ли видеодорожки в потоке
         const videoTracks = stream.getVideoTracks();
         if (videoTracks.length === 0) {
           throw new Error("Не удалось получить доступ к видеопотоку");
@@ -119,35 +108,36 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
 
         console.log("Запущена камера:", videoTracks[0].label);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error accessing webcam:", err);
 
       let errorMessage =
         "Не удалось получить доступ к камере. Пожалуйста, проверьте разрешения.";
 
-      // Специфичные сообщения об ошибках
-      if (
-        err.name === "NotAllowedError" ||
-        err.name === "PermissionDeniedError"
-      ) {
-        errorMessage =
-          "Доступ к камере отклонен. Пожалуйста, разрешите доступ в настройках браузера.";
-      } else if (
-        err.name === "NotFoundError" ||
-        err.name === "DevicesNotFoundError"
-      ) {
-        errorMessage =
-          "Камера не найдена. Пожалуйста, подключите веб-камеру и обновите страницу.";
-      } else if (
-        err.name === "NotReadableError" ||
-        err.name === "TrackStartError"
-      ) {
-        errorMessage =
-          "Камера уже используется другим приложением. Закройте его и попробуйте снова.";
-      } else if (err.name === "OverconstrainedError") {
-        errorMessage =
-          "Заданные параметры камеры не поддерживаются вашим устройством.";
-      } else if (err.message) {
+      if (err instanceof DOMException) {
+        if (
+          err.name === "NotAllowedError" ||
+          err.name === "PermissionDeniedError"
+        ) {
+          errorMessage =
+            "Доступ к камере отклонен. Пожалуйста, разрешите доступ в настройках браузера.";
+        } else if (
+          err.name === "NotFoundError" ||
+          err.name === "DevicesNotFoundError"
+        ) {
+          errorMessage =
+            "Камера не найдена. Пожалуйста, подключите веб-камеру и обновите страницу.";
+        } else if (
+          err.name === "NotReadableError" ||
+          err.name === "TrackStartError"
+        ) {
+          errorMessage =
+            "Камера уже используется другим приложением. Закройте его и попробуйте снова.";
+        } else if (err.name === "OverconstrainedError") {
+          errorMessage =
+            "Заданные параметры камеры не поддерживаются вашим устройством.";
+        }
+      } else if (err instanceof Error) {
         errorMessage = err.message;
       }
 
@@ -176,10 +166,8 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
   const startFrameCapture = () => {
     if (!streamRef.current || !videoRef.current) return;
 
-    // Сбрасываем флаг завершения при старте новой записи
     completedRef.current = false;
 
-    setRecordingTime(0);
     setCapturedFrames(0);
     frameCountRef.current = 0;
     setIsRecording(true);
@@ -197,7 +185,6 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
 
     const video = videoRef.current;
 
-    // Ожидаем, пока видео полностью загрузится для получения правильных размеров
     const checkVideoReady = () => {
       if (video.videoWidth > 0 && video.videoHeight > 0) {
         canvas.width = video.videoWidth;
@@ -220,38 +207,23 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
       `Starting frame capture: Canvas size ${canvas.width}x${canvas.height}`
     );
 
-    // Запускаем таймер для отображения времени записи и захвата кадров
     timerRef.current = setInterval(() => {
       if (!isCapturingRef.current) return;
 
-      setRecordingTime((prev) => {
-        const newTime = prev + 100;
-        if (newTime >= maxRecordingTimeMs) {
-          stopFrameCapture();
-        }
-        return newTime;
-      });
-
-      // Захватываем кадр
       if (frameCountRef.current < maxFrames && isCapturingRef.current) {
         try {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const imageData = canvas.toDataURL("image/jpeg", 0.8); // JPEG для уменьшения размера
+          const imageData = canvas.toDataURL("image/jpeg", 0.8);
 
-          // Увеличиваем счетчик перед отправкой кадра
           const currentFrame = frameCountRef.current;
           frameCountRef.current = currentFrame + 1;
 
-          // Безопасно обновляем состояние React
-          // Это обновление не должно вызывать побочных эффектов
           setCapturedFrames(currentFrame + 1);
 
-          // Отправляем кадр через колбэк после обновления счетчиков
           onFrameReceived(imageData, currentFrame);
 
           console.log(`Captured frame ${currentFrame + 1}/${maxFrames}`);
 
-          // Если достигли максимального числа кадров, останавливаем захват
           if (currentFrame + 1 >= maxFrames) {
             console.log(`Reached max frames (${maxFrames}), stopping capture`);
             stopFrameCapture();
@@ -262,7 +234,7 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
           stopFrameCapture();
         }
       }
-    }, 100); // захватываем кадр каждые 100 мс (~ 10 FPS)
+    }, 100);
   };
 
   const stopFrameCapture = () => {
@@ -278,9 +250,7 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
     isCapturingRef.current = false;
     setIsRecording(false);
 
-    // Если запись была остановлена и были захвачены кадры
     if (frameCountRef.current > 0) {
-      // Используем setTimeout, чтобы избежать обновления состояния во время рендеринга
       setTimeout(() => {
         onRecordingCompletedHandler();
       }, 100);
@@ -320,7 +290,6 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
             </div>
           )}
 
-          {/* Отображение видео с камеры */}
           <video
             ref={videoRef}
             autoPlay
@@ -331,7 +300,6 @@ const NoFuzzyWebCamera: React.FC<NoFuzzyWebCameraProps> = ({
             }`}
           />
 
-          {/* Индикатор записи */}
           {isRecording && (
             <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded-full flex items-center gap-2">
               <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>

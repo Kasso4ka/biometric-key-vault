@@ -33,7 +33,7 @@ export default function Home() {
           <TabsTrigger value="recover-address">
             Восстановление по адресу
           </TabsTrigger>
-          <TabsTrigger value="test">Тест</TabsTrigger>
+          <TabsTrigger value="self-custody">Self-custody</TabsTrigger>
         </TabsList>
 
         <TabsContent value="generate">
@@ -47,7 +47,7 @@ export default function Home() {
         <TabsContent value="recover-address">
           <RestoreFromDB />
         </TabsContent>
-        <TabsContent value="test">
+        <TabsContent value="self-custody">
           <GenerateOrRecover />
         </TabsContent>
       </Tabs>

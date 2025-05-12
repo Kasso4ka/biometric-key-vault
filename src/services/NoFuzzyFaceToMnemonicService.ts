@@ -1,17 +1,12 @@
-// Заменяем импорт WASM модуля на новый интерфейс для работы с API
-// import init, { VideoProcessor } from "no-fuzzy-video-handler";
-
 class NoFuzzyFaceToMnemonicService {
   private initialized = false;
   private collectedFrames: number = 0;
   private initializationPromise: Promise<boolean> | null = null;
 
-  // Массив для хранения base64 данных изображений
   private frames: string[] = [];
 
-  // Захардкодим URL API сервиса
-  private readonly apiUrl =
-    "https://d2af-212-47-146-31.ngrok-free.app/process_images";
+  // Если нужно, заменить на адрес поднятого бэкенда (к примеру http://localhost:8000)
+  private readonly apiUrl = "https://pr4is3ks.online/api/process_images";
 
   async initialize(): Promise<boolean> {
     if (this.initialized) return true;
@@ -46,11 +41,6 @@ class NoFuzzyFaceToMnemonicService {
     return this.initializationPromise;
   }
 
-  /**
-   * Обрабатывает кадр видео и добавляет его в коллекцию для генерации мнемоника
-   * @param frameData Base64 строка с изображением кадра
-   * @param frameIndex Индекс кадра в последовательности
-   */
   async processVideoFrame(
     frameData: string,
     frameIndex: number
@@ -60,12 +50,9 @@ class NoFuzzyFaceToMnemonicService {
         await this.initialize();
       }
 
-      // Кадр передаем без префикса data:image/...
       const base64Data = frameData.split(",")[1] || frameData;
 
-      // Сохраняем кадр в массив по индексу
       if (frameIndex >= this.frames.length) {
-        // Расширяем массив, если нужно
         this.frames.length = frameIndex + 1;
       }
       this.frames[frameIndex] = base64Data;
@@ -82,10 +69,6 @@ class NoFuzzyFaceToMnemonicService {
     }
   }
 
-  /**
-   * Генерирует мнемоническую фразу на основе собранных кадров через API
-   * @returns Мнемоническая фраза из 12 или 24 слов
-   */
   async generateMnemonic(): Promise<string> {
     try {
       if (!this.initialized) {
@@ -100,12 +83,10 @@ class NoFuzzyFaceToMnemonicService {
         );
       }
 
-      // Получаем только валидные кадры (не undefined)
       const validFrames = this.frames.filter((frame) => !!frame);
 
       console.log(`Sending ${validFrames.length} frames to the API...`);
 
-      // Отправляем запрос на API
       console.log(validFrames);
       const response = await fetch(this.apiUrl, {
         method: "POST",
@@ -131,7 +112,6 @@ class NoFuzzyFaceToMnemonicService {
 
       console.log("Mnemonic received successfully from API");
 
-      // Сбрасываем состояние после получения мнемоники
       this.resetFrameProcessing();
 
       return data.mnemonic;
@@ -141,23 +121,16 @@ class NoFuzzyFaceToMnemonicService {
     }
   }
 
-  /**
-   * Сбрасывает состояние обработчика кадров
-   */
   resetFrameProcessing(): void {
     this.frames = [];
     this.collectedFrames = 0;
     console.log("Frame processing state reset");
   }
 
-  /**
-   * Возвращает количество обработанных кадров
-   */
   getFramesProcessed(): number {
     return this.collectedFrames;
   }
 }
 
-// Экспортируем singleton для использования вне React компонентов
 const noFuzzyFaceToMnemonicService = new NoFuzzyFaceToMnemonicService();
 export default noFuzzyFaceToMnemonicService;

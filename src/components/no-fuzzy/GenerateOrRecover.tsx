@@ -14,7 +14,6 @@ const GenerateOrRecover: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isServiceReady, setIsServiceReady] = useState(false);
 
-  // Инициализация WASM сервиса
   useEffect(() => {
     let mounted = true;
 
@@ -45,19 +44,23 @@ const GenerateOrRecover: React.FC = () => {
 
   const handleFrameReceived = useCallback(
     async (imageData: string, frameIndex: number) => {
-      // console.log(`Frame received: ${frameIndex}`);
-
       setRecordedFramesCount(frameIndex + 1);
 
-      // Отправляем кадр в WASM модуль
       try {
         await noFuzzyFaceToMnemonicService.processVideoFrame(
           imageData,
           frameIndex
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Error processing video frame:", err);
-        setError(`Ошибка обработки кадра ${frameIndex}: ${err.message}`);
+
+        let message = "Неизвестная ошибка обработки кадра";
+
+        if (err instanceof Error) {
+          message = err.message;
+        }
+
+        setError(`Ошибка обработки кадра ${frameIndex}: ${message}`);
       }
     },
     []
@@ -71,16 +74,22 @@ const GenerateOrRecover: React.FC = () => {
     setSuccessMessage(null);
 
     try {
-      // Получаем мнемоник из WASM модуля
       const generatedMnemonic =
         await noFuzzyFaceToMnemonicService.generateMnemonic();
       console.log("Mnemonic generated:", generatedMnemonic);
 
       setMnemonic(generatedMnemonic);
       setSuccessMessage("Мнемоническая фраза успешно сгенерирована!");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error generating mnemonic:", err);
-      setError(`Ошибка генерации мнемонической фразы: ${err.message}`);
+
+      let message = "Неизвестная ошибка при генерации мнемонической фразы";
+
+      if (err instanceof Error) {
+        message = err.message;
+      }
+
+      setError(`Ошибка генерации мнемонической фразы: ${message}`);
     } finally {
       setIsProcessing(false);
     }
