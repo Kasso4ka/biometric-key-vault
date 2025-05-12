@@ -25,7 +25,7 @@ export default function Home() {
         onValueChange={setActiveTab}
         className="mb-8 w-full h-full"
       >
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="generate">Генерация</TabsTrigger>
           <TabsTrigger value="recover-file">
             Восстановление из файла
